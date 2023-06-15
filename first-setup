@@ -1,0 +1,51 @@
+Tahap yang pertama membuat bridge interface untuk client
+/interface bridge add name="LAN"​
+Bash
+kemudian masukan interface apa saja yang akan dengan client. di sini saya akan menggunakan ether3 dan wlan1 sebagai interface yang terhubung dengan client jadi perintah nya akan menjadi seperti ini
+
+/interface bridge port add interface="ether3" bridge="LAN"
+/interface bridge port add interface="wlan1" bridge="LAN"
+Bash
+Tahap yang ke dua adalah dengan menentukan ip address. Yang pertama saya akan menentukan ip address untuk ether1 sebagai ethernet yang terhubung ke modem dari ISP. Untuk setting ip address seecara manual teman teman dapat menggunakan script ini
+/ip address add address="192.168.1.2/24" interface="ether1"​
+/ip route add gateway="192.168.1.1" check-gateway=ping distance=1
+Bash
+sedangkan untuk setting ip address dengan menggunakan dhcp client teman teman dapat menggunakan script di bawah ini
+
+/ip dhcp-client add interface=ether1 add-default-route=yes
+/ip dhcp-client enable 0
+Bash
+sekarang kita setting ip address untuk bridge yang bernama lan sebagai interface yang terkoneksi ke klien kita
+
+/ip address add address="10.10.1.1/24" interface="LAN"
+Bash
+ Setelah itu kita setting interface wlan1 / wifi di mikrotik dengan menggunakan perintah di bawah ini
+/interface wireless security-profiles add name="p1" mode=dynamic-keys authentication-types="wpa-psk,wpa2-psk" wpa-pre-shared-key="password123" wpa2-pre-shared-key="password123"
+/interface wireless set 0 mode=ap-bridge band=2ghz-b/g/n ssid="rumahcode.org" security-profile="p1"
+/interface enable wlan1​
+Bash
+pada script di atas teman teman perlu mengganti password nya pada bagian wpa-pre-shared-key dan wpa2-pre-shared-key setelah itu teman teman harus mengganti pada bagian ssid untuk di sesuaikan dengan kebutuhan teman teman
+
+Sekarang kita akan setting bagian DNS Server nya dengan menggunakan perintah berikut ini
+/ip dns set servers="1.1.1.1,1.0.0.1" allow-remote-requests="yes" use-doh-server="https://cloudflare-dns.com/dns-query"​
+Bash
+jika teman teman tidak ingin menggunakan DNS Over Https teman teman dapat menghapus bagian use-doh-server="https://cloudflare-dns.com/dns-query".
+
+ Yang ke lima adalah melakukan konfigurasi dchp server untuk klient kita. Pertama tama kita buat dulu pool nya
+/ip pool add name="dhcp_pool0" ranges=10.10.1.2-10.10.1.254​
+Bash
+kemudian kita setting dhcp server nya di interface bride LAN dengan menggunakan address pool yang sudah di buat tadi
+
+/ip dhcp-server network add address="10.10.1.0/24" gateway="10.10.1.1" dns-server="10.10.1.1"
+/ip dhcp-server add interface="LAN" address-pool="dhcp_pool0" lease-time="1d 00:00:00" add-arp=yes
+/ip dhcp-server enable 0
+Bash
+ Setelah itu kita setting masquarade ke interface ether1 sebagai interface yang terkoneksi dengan internet / modem dari ISP
+/ip firewall nat add chain=srcnat out-interface="ether1" action=masquerade​
+Bash
+dan yang terakhir adalah setting ntp client dan time zone
+/system clock set time-zone-name=Asia/Jakarta
+/system ntp client set enable=yes primary-ntp=203.89.31.10 secondary-ntp=203.114.224.252
+​
+Bash
+Setelah selesai kita menjalankan script / perintah di atas maka selesai lah sudah konfigurasi dasar mikrotik. Jika konfigurasi nya benar ( sesuai dengan kondisi di temapt teman teman ) maka mikrotik teman teman sudah terhubung dengan internet. Selain itu klien dari mikrotik teman teman sudah terhubung dengan inernet. Jika ada yang belum jelas atau ingin teman teman tanyakan silahkan teman teman lihat video di bawah ini.
